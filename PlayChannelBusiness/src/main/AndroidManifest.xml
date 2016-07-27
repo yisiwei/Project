@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.ninethree.palychannelbusiness">
+
+    <application
+        android:name=".MyApp"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity
+            android:name=".activity.WelcomeActivity"
+            android:theme="@style/WelcomeTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <!-- 登录 -->
+        <activity android:name=".activity.LoginActivity" />
+        <!-- 主界面 -->
+        <activity
+            android:name=".activity.MainActivity"
+            android:launchMode="singleTask"
+            android:theme="@style/MainTheme" />
+        <!-- 任性刷 -->
+        <activity android:name=".activity.ScanCodeActivity" />
+        <!-- 我的卡券 -->
+        <activity android:name=".activity.MyCardActivity" />
+
+        <activity
+            android:name=".activity.WebViewActivity"
+            android:windowSoftInputMode="stateHidden|adjustPan" />
+
+        <activity
+            android:name=".activity.Main2Activity"
+            android:launchMode="singleTask"
+            android:theme="@style/MainTheme" />
+
+        <service android:name=".service.DownLoadService" />
+    </application>
+
+</manifest>
