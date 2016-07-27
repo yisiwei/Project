@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#ff6600</color><!-- #303F9F -->
+    <color name="colorAccent">#FF4081</color>
+
+    <!-- 背景颜色 -->
+    <color name="color_bg">#EFEFF4</color>
+
+    <color name="color_fff">#FFFFFF</color>
+    <color name="color_f8">#F8F8F8</color>
+
+    <!-- 线条颜色 -->
+    <color name="line2">#e5e5e5</color>
+    <color name="line">#F0F0F0</color>
+
+    <color name="transparent">#00000000</color>
+
+    <color name="color_32">#323232</color>
+    <color name="color_64">#646464</color>
+
+    <color name="color_666">#666666</color>
+
+    <color name="color_blue">#3F51B5</color>
+
+    <color name="color_main">#ff6600</color>
+</resources>
