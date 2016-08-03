@@ -7,6 +7,8 @@ import android.telephony.TelephonyManager;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.webkit.CookieManager;
+import android.webkit.CookieSyncManager;
 import android.widget.EditText;
 
 import java.text.NumberFormat;
@@ -166,4 +168,24 @@ public class AppUtil {
 
         return mac;
     }
+
+    public static String getCookies(String url){
+        CookieManager cookieManager = CookieManager.getInstance();
+        String cookieStr = cookieManager.getCookie(url);
+        Log.i("Cookies=" + cookieStr);
+        return cookieStr;
+    }
+
+    public static void setCookies(Context context,String url,String value){
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.setAcceptCookie(true);
+        cookieManager.setCookie(url,value);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            cookieManager.flush();
+        } else {
+            CookieSyncManager.createInstance(context);
+            CookieSyncManager.getInstance().sync();
+        }
+    }
+
 }

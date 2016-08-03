@@ -17,7 +17,7 @@ import com.ninethree.palychannelbusiness.R;
 import com.ninethree.palychannelbusiness.util.Log;
 
 
-public class WebViewActivity extends BaseActivity {
+public class WebViewActivity extends BaseWebActivity {
 
     private WebView mWebView;
     private ProgressBar mProgressBar;
@@ -52,7 +52,9 @@ public class WebViewActivity extends BaseActivity {
 //		setting.setCacheMode(WebSettings.LOAD_DEFAULT);  //设置 缓存模式  
         setting.setCacheMode(WebSettings.LOAD_NO_CACHE);  //不适用缓存
 //		setting.setDomStorageEnabled(true); // 开启 DOM storage API 功能
-//		setting.setDatabaseEnabled(true);//开启 database storage API 功能  
+//		setting.setDatabaseEnabled(true);//开启 database storage API 功能
+
+        //setting.setUseWideViewPort(true);
 
         // mWebView.getSettings().setSupportZoom(true);//页面支持缩放
         // mWebView.getSettings().setBuiltInZoomControls(true);
@@ -71,7 +73,7 @@ public class WebViewActivity extends BaseActivity {
                 // 自身加载新链接,不做外部跳转
                 //view.loadUrl(url);
 
-                if (url.startsWith("tel:") || url.startsWith("sms:")) {
+                if (url.startsWith("tel:") || url.startsWith("sms:") || url.endsWith(".apk")) {
                     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                     startActivity(intent);
                     return true;

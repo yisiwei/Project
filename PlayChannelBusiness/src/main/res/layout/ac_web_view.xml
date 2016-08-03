@@ -23,5 +23,4 @@
             android:max="100"
             android:progressDrawable="@drawable/progress_bar_states" />
     </FrameLayout>
-
 </LinearLayout>

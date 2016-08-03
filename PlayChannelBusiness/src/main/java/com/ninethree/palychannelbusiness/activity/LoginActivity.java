@@ -1,13 +1,37 @@
 package com.ninethree.palychannelbusiness.activity;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.google.gson.reflect.TypeToken;
 import com.jude.swipbackhelper.SwipeBackHelper;
+import com.ninethree.palychannelbusiness.MyApp;
 import com.ninethree.palychannelbusiness.R;
+import com.ninethree.palychannelbusiness.bean.AscPackIntResult;
+import com.ninethree.palychannelbusiness.bean.AscPackResult;
+import com.ninethree.palychannelbusiness.bean.Result;
+import com.ninethree.palychannelbusiness.bean.User;
+import com.ninethree.palychannelbusiness.util.AppUtil;
+import com.ninethree.palychannelbusiness.util.ByteUtil;
+import com.ninethree.palychannelbusiness.util.GZipUtil;
+import com.ninethree.palychannelbusiness.util.Log;
+import com.ninethree.palychannelbusiness.util.Md5Util;
+import com.ninethree.palychannelbusiness.util.PreferencesUtil;
+import com.ninethree.palychannelbusiness.util.StringUtil;
+import com.ninethree.palychannelbusiness.webservice.DBPubService;
+import com.ninethree.palychannelbusiness.webservice.LoginService;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.kobjects.base64.Base64;
+import org.ksoap2.serialization.SoapObject;
+
+import java.util.List;
 
 public class LoginActivity extends BaseActivity {
 
@@ -15,14 +39,16 @@ public class LoginActivity extends BaseActivity {
     private EditText mPasswordEt;
     private Button mLoginBtn;
 
+    private User mUser;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        SwipeBackHelper.getCurrentPage(this).setSwipeBackEnable(false);
+        //SwipeBackHelper.getCurrentPage(this).setSwipeBackEnable(false);
 
         mTitle.setText(R.string.login);
-        mLeftBtn.setVisibility(View.INVISIBLE);
+        //mLeftBtn.setVisibility(View.INVISIBLE);
 
         initView();
     }
@@ -46,11 +72,166 @@ public class LoginActivity extends BaseActivity {
                 String username = mUsernameEt.getText().toString();
                 String password = mPasswordEt.getText().toString();
 
-                Intent intent = new Intent(this,MainActivity.class);
-                startActivity(intent);
-                finish();
+                if (StringUtil.isNullOrEmpty(username)) {
+                    toast("请输入账号");
+                    return;
+                }
+
+                if (StringUtil.isNullOrEmpty(password)) {
+                    toast("请输入密码");
+                    return;
+                }
+
+                new LoginTask().execute(username, Md5Util.md5(password));
 
                 break;
+        }
+    }
+
+    /**
+     * 登录异步请求
+     */
+    private class LoginTask extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            mProgressDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            String param = LoginService.loginParamPack(getApplicationContext(),
+                    params[0], params[1]);
+            SoapObject result = LoginService.login(param);
+            String code = null;
+            try {
+                code = result.getProperty(0).toString();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return code;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            mProgressDialog.dismiss();
+            if (null != result) {
+                // Base64转byte[]
+                byte[] resultByte = Base64.decode(result);
+                // 解Guid
+                AscPackResult results = ByteUtil.ascPackDownGuid(resultByte);
+                byte[] secBytes = (byte[]) results.getResultValue();
+                String secBase64 = Base64.encode(secBytes);
+                // 将密钥存入SharedPreferences
+                PreferencesUtil.putString(getApplicationContext(), "userSec",
+                        secBase64);
+
+                // 解true/false
+                results = ByteUtil.ascPackDownBoolean(results.getResultBytes());
+                boolean bool = (boolean) results.getResultValue();
+                Log.i("bool:" + bool);
+                if (bool) {// 请求成功
+                    // 拆包byte[]
+                    AscPackIntResult byteLengthResult = ByteUtil
+                            .ascPackDownBytes(results.getResultBytes());
+                    Log.i("byte[]长度:" + byteLengthResult.resultValue);
+                    // 解压byte[]
+                    byte[] dataByte = GZipUtil
+                            .unGZip(byteLengthResult.resultBytes);
+                    // byte转String
+                    String dataStr = ByteUtil.byteToString(dataByte);
+                    Log.i("dataStr:" + dataStr);
+                    success(dataStr);
+
+                } else {// 请求失败
+                    results = ByteUtil.ascPackDownString(results
+                            .getResultBytes());
+                    String resultData = results.getResultValue().toString();
+                    Log.i("false_resultJson:" + resultData);
+                    try {
+                        JSONObject jsonObject = new JSONObject(resultData);
+                        String msg = jsonObject.optString("msg");
+                        toast(msg);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else {
+                toast("连接超时，请检查您的网络");
+            }
+        }
+    }
+
+    private void success(String str) {
+        try {
+            JSONObject jsonObject = new JSONObject(str);
+            JSONArray tableArray = jsonObject.optJSONArray("Table");
+            TypeToken<List<Result>> typeToken = new TypeToken<List<Result>>() {
+            };
+            List<Result> results = MyApp.getGson().fromJson(
+                    tableArray.toString(), typeToken.getType());
+            Log.i("results:" + results.get(0));
+            Result result = results.get(0);
+
+            if (result.getResultNum() == 0) {// 登录成功
+
+                // user
+                JSONArray table6Array = jsonObject.optJSONArray("Table6");
+                TypeToken<List<User>> userTypeToken = new TypeToken<List<User>>() {
+                };
+                List<User> users = MyApp.getGson().fromJson(
+                        table6Array.toString(), userTypeToken.getType());
+
+                mUser = users.get(0);
+
+                new LoginGuidTask().execute(mUser.getUserGuid().replace("-","")+mUser.getUserID());
+
+            }else{
+                toast(result.getRetMsg());
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private class LoginGuidTask extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            mProgressDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            Log.i("params:"+params[0]);
+            SoapObject result = DBPubService.getRetLoginGuid(params[0]);
+            String code = null;
+            try {
+                code = result.getProperty(0).toString();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return code;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            mProgressDialog.dismiss();
+
+            Log.i("result:"+result);
+
+            if (null != result) {
+                AppUtil.setCookies(getApplicationContext(),"http://sj.m.93966.net/","ULSID="+result+mUser.getUserID()+";Max-Age=3600;Domain=.93966.net;Path=/");
+
+                finish();
+            } else {
+                toast("连接超时，请检查您的网络");
+            }
         }
     }
 }

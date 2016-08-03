@@ -27,7 +27,7 @@ public class Constants {
     /**
      * apk文件名
      */
-    public static final String APK_NAME = "ylpd.apk";
+    public static final String APK_NAME = "ylqyj.apk";
 
 
     /**

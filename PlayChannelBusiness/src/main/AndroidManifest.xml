@@ -18,26 +18,27 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <!-- 登录 -->
         <activity android:name=".activity.LoginActivity" />
-        <!-- 主界面 -->
-        <activity
-            android:name=".activity.MainActivity"
-            android:launchMode="singleTask"
-            android:theme="@style/MainTheme" />
+
         <!-- 任性刷 -->
         <activity android:name=".activity.ScanCodeActivity" />
+
         <!-- 我的卡券 -->
         <activity android:name=".activity.MyCardActivity" />
 
         <activity
             android:name=".activity.WebViewActivity"
-            android:windowSoftInputMode="stateHidden|adjustPan" />
+            android:windowSoftInputMode="stateHidden|adjustResize" />
 
+        <!-- 主界面 -->
         <activity
             android:name=".activity.Main2Activity"
             android:launchMode="singleTask"
             android:theme="@style/MainTheme" />
+
+        <activity android:name=".activity.MyRecordActivity" />
 
         <service android:name=".service.DownLoadService" />
     </application>
