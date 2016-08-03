@@ -9,6 +9,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:name=".MyApp"
@@ -37,20 +38,21 @@
         <activity android:name=".activity.ScanCodeActivity" />
         <!-- 我的卡券 -->
         <activity android:name=".activity.MyCardActivity" />
-
         <activity android:name=".activity.WebViewActivity" />
-
-        <activity android:name=".activity.Main2Activity"
+        <activity
+            android:name=".activity.Main2Activity"
             android:launchMode="singleTask"
             android:theme="@style/MainTheme" />
-
-        <activity android:name=".wxapi.WXEntryActivity"
-            android:theme="@android:style/Theme.Translucent"
+        <activity android:name=".activity.CaptureActivity" />
+        <activity
+            android:name=".wxapi.WXEntryActivity"
             android:exported="true"
-            android:launchMode="singleTop"/>
+            android:launchMode="singleTop"
+            android:theme="@android:style/Theme.Translucent" />
 
         <service android:name=".service.DownLoadService" />
 
+        <activity android:name=".activity.MyRecordActivity"></activity>
     </application>
 
 </manifest>

@@ -1,40 +1,40 @@
 package com.ninethree.playchannel.activity;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 
 import com.jude.swipbackhelper.SwipeBackHelper;
 import com.ninethree.playchannel.MyApp;
 import com.ninethree.playchannel.R;
 import com.ninethree.playchannel.adapter.ImagePagerAdapter;
+import com.ninethree.playchannel.bean.SessionInfo;
 import com.ninethree.playchannel.bean.Upgrade;
-import com.ninethree.playchannel.bean.WxToken;
-import com.ninethree.playchannel.bean.WxUserInfo;
 import com.ninethree.playchannel.service.DownLoadService;
-import com.ninethree.playchannel.util.Constants;
+import com.ninethree.playchannel.util.AppUtil;
+import com.ninethree.playchannel.util.FileUtils;
 import com.ninethree.playchannel.util.ListUtils;
 import com.ninethree.playchannel.util.Log;
 import com.ninethree.playchannel.util.PackageUtil;
 import com.ninethree.playchannel.view.AutoScrollViewPager;
 import com.ninethree.playchannel.view.MyDialog;
-import com.tencent.mm.sdk.openapi.ConstantsAPI;
-import com.tencent.mm.sdk.openapi.SendAuth;
+import com.ninethree.playchannel.webservice.DBPubService;
 import com.yolanda.nohttp.NoHttp;
 import com.yolanda.nohttp.rest.OnResponseListener;
 import com.yolanda.nohttp.rest.Request;
 import com.yolanda.nohttp.rest.RequestQueue;
 import com.yolanda.nohttp.rest.Response;
 
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.ksoap2.serialization.SoapObject;
 
 import java.util.ArrayList;
-import java.util.Map;
 
 public class Main2Activity extends BaseActivity {
 
@@ -45,9 +45,6 @@ public class Main2Activity extends BaseActivity {
     private int preSelImgIndex = 0;
     private AutoScrollViewPager viewPager;// 轮播ViewPager
 
-    //private Banner mBanner;
-    //private Integer[] mImages = {R.drawable.banner_1, R.drawable.banner_2, R.drawable.banner_3, R.drawable.banner_4};
-
     private Button mPlayChannelBtn;
     private Button mNearbyPlayBtn;
     private Button mMyFootprintBtn;
@@ -56,7 +53,7 @@ public class Main2Activity extends BaseActivity {
 
     private Button mMyPduBtn;
     private Button mMyCardBtn;
-    private Button mMyCollectBtn;
+    //private Button mMyCollectBtn;
     private Button mUserCenterBtn;
 
     private Button mPromotionBtn;//优惠促销
@@ -65,7 +62,11 @@ public class Main2Activity extends BaseActivity {
     private Button mTouristBtn;
     private Button mKursaalBtn;
 
+    private Button mMyRecordBtn;//游玩记录
+
     private RequestQueue requestQueue;
+
+    private SessionInfo mSessionInfo;
 
     @Override
     public void setLayout() {
@@ -77,7 +78,21 @@ public class Main2Activity extends BaseActivity {
         super.onCreate(savedInstanceState);
 
         SwipeBackHelper.getCurrentPage(this).setSwipeBackEnable(false);
-        mLeftBtn.setVisibility(View.INVISIBLE);
+        mLeftBtn.setImageResource(R.drawable.icon_clear_cache);
+        mLeftBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clearCache();
+            }
+        });
+        mRightBtn.setVisibility(View.VISIBLE);
+        mRightBtn.setImageResource(R.drawable.icon_scan);
+        mRightBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(getApplicationContext(),CaptureActivity.class));
+            }
+        });
 
         initView();
         initEvent();
@@ -170,7 +185,7 @@ public class Main2Activity extends BaseActivity {
 
         mMyPduBtn = (Button) findViewById(R.id.my_pdu);
         mMyCardBtn = (Button) findViewById(R.id.my_card);
-        mMyCollectBtn = (Button) findViewById(R.id.my_collect);
+        //mMyCollectBtn = (Button) findViewById(R.id.my_collect);
         mUserCenterBtn = (Button) findViewById(R.id.user_center);
 
         mPromotionBtn = (Button) findViewById(R.id.promotion);
@@ -178,6 +193,8 @@ public class Main2Activity extends BaseActivity {
 
         mTouristBtn = (Button) findViewById(R.id.tourist);
         mKursaalBtn = (Button) findViewById(R.id.kursaal);
+
+        mMyRecordBtn = (Button) findViewById(R.id.my_record);
     }
 
     private void initEvent() {
@@ -189,7 +206,7 @@ public class Main2Activity extends BaseActivity {
 
         mMyPduBtn.setOnClickListener(this);
         mMyCardBtn.setOnClickListener(this);
-        mMyCollectBtn.setOnClickListener(this);
+        //mMyCollectBtn.setOnClickListener(this);
         mUserCenterBtn.setOnClickListener(this);
 
         mPromotionBtn.setOnClickListener(this);
@@ -197,19 +214,59 @@ public class Main2Activity extends BaseActivity {
 
         mTouristBtn.setOnClickListener(this);
         mKursaalBtn.setOnClickListener(this);
+
+        //游玩记录
+        mMyRecordBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                if (mSessionInfo != null && mSessionInfo.getReturnCode() == 0){
+                    Intent intent = new Intent(getApplicationContext(),MyRecordActivity.class);
+                    intent.putExtra("user",mSessionInfo.getReturnObject().getUserBasic());
+                    startActivity(intent);
+                }else{
+                    startActivity(new Intent(getApplicationContext(),LoginActivity.class));
+                }
+            }
+        });
+    }
+
+    private void clearCache(){
+        // 清理Webview缓存数据库
+        deleteDatabase("webview.db");
+        deleteDatabase("webviewCookiesChromium.db");
+        deleteDatabase("webviewCookiesChromiumPrivate.db");
+
+        FileUtils.deleteFile(getCacheDir());
+
+        toast("缓存清理成功");
     }
 
     @Override
     public void onResume() {
         super.onResume();
         viewPager.startAutoScroll();
-        Log.i("Main>>>onResume");
-        if(MyApp.resp != null){
-            if(MyApp.resp.getType() == ConstantsAPI.COMMAND_SENDAUTH){
-                Log.i("token:"+MyApp.resp.token);
-                //getToken(MyApp.resp.token);
+//        Log.i("Main>>>onResume");
+//        if(MyApp.resp != null){
+//            if(MyApp.resp.getType() == ConstantsAPI.COMMAND_SENDAUTH){
+//                Log.i("token:"+MyApp.resp.token);
+//                //getToken(MyApp.resp.token);
+//            }
+//        }
+
+        String cookies = AppUtil.getCookies("http://shop.93966.net/h5user/card/mycard");
+
+        if (cookies != null){
+            if(mSessionInfo == null){
+                String[] arr = cookies.split("=");
+                Log.i("value:"+arr[1]);
+                new SessionTask().execute(arr[1]);
             }
+        }else{
+            mSessionInfo = null;
+            mTitle.setText(R.string.app_name);
         }
+
     }
 
     @Override
@@ -221,13 +278,11 @@ public class Main2Activity extends BaseActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        //mBanner.isAutoPlay(true);//开始轮播
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        //mBanner.isAutoPlay(false);//停止轮播
     }
 
     @Override
@@ -253,9 +308,9 @@ public class Main2Activity extends BaseActivity {
             case R.id.my_card:
                 url = "http://shop.93966.net/h5user/card/mycard";
                 break;
-            case R.id.my_collect:
-                url = "http://shop.93966.net/h5user/collect/mycollect";
-                break;
+//            case R.id.my_collect:
+//                url = "http://shop.93966.net/h5user/collect/mycollect";
+//                break;
             case R.id.user_center://用户中心
                 url = "http://shop.93966.net/h5user/UserCenter/Info";
                 break;
@@ -271,6 +326,9 @@ public class Main2Activity extends BaseActivity {
             case R.id.kursaal:
                 url = "http://ylc.93966.net/Playground/Topic/List?id=8";
                 break;
+//            case R.id.my_record://游玩记录
+//                url = "http://shop.93966.net/h5user/pdu/MyConRec";
+//                break;
         }
         intent.putExtra("url", url);
         startActivity(intent);
@@ -283,7 +341,7 @@ public class Main2Activity extends BaseActivity {
         requestQueue.add(1000, request, new OnResponseListener<JSONObject>() {
             @Override
             public void onStart(int what) {
-                mProgressDialog.show();
+
             }
 
             @Override
@@ -307,7 +365,7 @@ public class Main2Activity extends BaseActivity {
 
             @Override
             public void onFinish(int what) {
-                mProgressDialog.dismiss();
+
             }
         });
 
@@ -330,94 +388,57 @@ public class Main2Activity extends BaseActivity {
         startService(intent);
     }
 
-    public void wxLogin(View v){
+    private class SessionTask extends AsyncTask<String, Void, String> {
 
-        if (!MyApp.api.isWXAppInstalled()) {
-            toast("您尚未安装微信");
-            return;
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            mProgressDialog.show();
         }
 
-        SendAuth.Req req = new SendAuth.Req();
-        req.scope = "snsapi_userinfo";
-        req.state = "ylpd_wx_login";
-        MyApp.api.sendReq(req);
-        Log.i("开始调用");
+        @Override
+        protected String doInBackground(String... params) {
+
+            SoapObject result = DBPubService.getSessionInfo(params[0]);
+            String code = null;
+            try {
+                code = result.getProperty(0).toString();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return code;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            mProgressDialog.dismiss();
+
+            Log.i("result:"+result);
+
+            if (null != result) {
+                success(result);
+            } else {
+                toast("连接超时，请检查您的网络");
+            }
+        }
     }
 
+    private void success(String str) {
+        try {
+            JSONObject jsonObject = new JSONObject(str);
 
-    //这个方法会取得accesstoken  和openID
-    private void getToken(String code){
+            mSessionInfo = MyApp.getGson().fromJson(jsonObject.toString(),
+                    SessionInfo.class);
 
-        String url = "https://api.weixin.qq.com/sns/oauth2/access_token?appid="+ Constants.APP_ID+"&secret="+Constants.APP_SECRET+"&code=" +code+"&grant_type=authorization_code";
-
-        Request<JSONObject> request = NoHttp.createJsonObjectRequest(url);
-
-        MyApp.getRequestQueue().add(1000, request, new OnResponseListener<JSONObject>() {
-            @Override
-            public void onStart(int what) {
-                mProgressDialog.show();
+            if (mSessionInfo.getReturnCode() == 0){
+                mTitle.setText(mSessionInfo.getReturnObject().getOrg().getOrgName());
             }
 
-            @Override
-            public void onSucceed(int what, Response<JSONObject> response) {
-                int code = response.getHeaders().getResponseCode();
-                Log.i("success-ResponseCode:" + code);
-                Log.i("success--get:" + response.get());
-                if (code == 200) {
-                    WxToken token = MyApp.getGson().fromJson(response.get().toString(), WxToken.class);
-                    getUserInfo(token.getAccess_token(),token.getOpenid());
-                }
-            }
-
-            @Override
-            public void onFailed(int what, String url, Object tag, Exception exception, int responseCode, long networkMillis) {
-                Log.i("onFailed:" + exception.getMessage());
-                Toast.makeText(getApplicationContext(),"授权失败",Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onFinish(int what) {
-                mProgressDialog.dismiss();
-            }
-        });
-
+        } catch (JSONException e) {
+            toast("服务器错误");
+            e.printStackTrace();
+        }
     }
 
-    //获取到token和openID之后，调用此接口得到身份信息
-    private void getUserInfo(String token,String openID){
-
-        String url = "https://api.weixin.qq.com/sns/userinfo?access_token=" +token+"&openid=" +openID;
-
-        Request<JSONObject> request = NoHttp.createJsonObjectRequest(url);
-
-        MyApp.getRequestQueue().add(1000, request, new OnResponseListener<JSONObject>() {
-            @Override
-            public void onStart(int what) {
-                mProgressDialog.show();
-            }
-
-            @Override
-            public void onSucceed(int what, Response<JSONObject> response) {
-                int code = response.getHeaders().getResponseCode();
-                Log.i("success-ResponseCode:" + code);
-                Log.i("success--get:" + response.get());
-                if (code == 200) {
-                    WxUserInfo userInfo = MyApp.getGson().fromJson(response.get().toString(), WxUserInfo.class);
-                    Log.i(""+userInfo.toString());
-                    toast(userInfo.toString());
-                }
-            }
-
-            @Override
-            public void onFailed(int what, String url, Object tag, Exception exception, int responseCode, long networkMillis) {
-                Log.i("onFailed:" + exception.getMessage());
-                Toast.makeText(getApplicationContext(),"授权失败",Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onFinish(int what) {
-                mProgressDialog.dismiss();
-            }
-        });
-    }
 }

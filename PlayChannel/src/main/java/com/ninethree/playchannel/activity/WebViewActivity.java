@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.KeyEvent;
 import android.view.View;
 import android.webkit.CookieManager;
@@ -32,7 +33,7 @@ import org.json.JSONObject;
 
 import java.net.URI;
 
-public class WebViewActivity extends BaseActivity {
+public class WebViewActivity extends BaseWebActivity {
 
     private WebView mWebView;
     private ProgressBar mProgressBar;
@@ -62,7 +63,18 @@ public class WebViewActivity extends BaseActivity {
 
         Intent intent = getIntent();
         mUrl = intent.getStringExtra("url");
-        Log.i(mUrl);
+        Log.i("url"+mUrl);
+        if (mUrl != null && !mUrl.startsWith("http")){
+            toast("地址错误");
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    finish();
+                }
+            },1000);
+
+            return;
+        }
 
         WebSettings setting = mWebView.getSettings();
         setting.setJavaScriptEnabled(true);// 设置支持Javascript
@@ -262,7 +274,7 @@ public class WebViewActivity extends BaseActivity {
                 if (code == 200) {
                     WxUserInfo userInfo = MyApp.getGson().fromJson(response.get().toString(), WxUserInfo.class);
                     Log.i(""+userInfo.toString());
-                    mWebView.loadUrl("javascript:wxLogin('"+userInfo.getUnionid()+"','"+userInfo.getNickname()+"','"+userInfo.getSex()+"','"+userInfo.getHeadimgurl()+"'"+")");
+                    mWebView.loadUrl("javascript:getwxUserInfoByApp('"+userInfo.getUnionid()+"','"+userInfo.getNickname()+"','"+userInfo.getSex()+"','"+userInfo.getHeadimgurl()+"'"+")");
                 }
             }
 
