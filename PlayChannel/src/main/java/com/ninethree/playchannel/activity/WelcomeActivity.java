@@ -26,7 +26,7 @@ public class WelcomeActivity extends Activity {
 
     private void startApp() {
         //Intent intent = new Intent(this, LoginActivity.class);
-        Intent intent = new Intent(this, Main2Activity.class);
+        Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
         finish();
         overridePendingTransition(R.anim.push_left_in, R.anim.push_left_out);
