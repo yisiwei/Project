@@ -1,5 +1,6 @@
 package com.ninethree.playchannel.activity;
 
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -7,6 +8,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.webkit.CookieManager;
 import android.widget.AbsListView;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -19,6 +21,7 @@ import com.ninethree.playchannel.bean.Record;
 import com.ninethree.playchannel.bean.User;
 import com.ninethree.playchannel.util.AppUtil;
 import com.ninethree.playchannel.util.Log;
+import com.ninethree.playchannel.util.StringUtil;
 import com.ninethree.playchannel.webservice.DBPubService;
 
 import org.json.JSONArray;
@@ -51,6 +54,7 @@ public class MyRecordActivity extends BaseActivity implements SwipeRefreshLayout
     private ProgressBar mBar;
 
     private boolean mIsRefresh;
+    private Record mSelectRecord;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +92,21 @@ public class MyRecordActivity extends BaseActivity implements SwipeRefreshLayout
         mListView.addFooterView(mFooter);
 
         mListView.setOnScrollListener(this);
+
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                mSelectRecord = mDatas.get(position);
+                if (mSelectRecord.getScanTypeId() == 4000 && mSelectRecord.getScanMethodTypeId() == 6000){
+                    Intent intent = new Intent(getApplicationContext(), WebViewActivity.class);
+                    intent.putExtra("url", "http://shop.93966.net/H5User/Pdu/UseDetail?id="+mSelectRecord.getScanHistoryId());
+                    startActivity(intent);
+                }
+//                if (!StringUtil.isNullOrEmpty(mDatas.get(position).getPduId())){
+//                    new CheangeStateTask().execute(mSelectRecord.getScanHistoryId(),mUser.getSeftOrgID());
+//                }
+            }
+        });
 
         mDatas = new ArrayList<Record>();
 
@@ -161,6 +180,7 @@ public class MyRecordActivity extends BaseActivity implements SwipeRefreshLayout
                 }
             } else {
                 mBar.setVisibility(ProgressBar.VISIBLE);
+                mTextView.setText("正在加载");
             }
         }
 
@@ -188,8 +208,9 @@ public class MyRecordActivity extends BaseActivity implements SwipeRefreshLayout
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
             mProgressDialog.dismiss();
-            mBar.setVisibility(ProgressBar.GONE);
+            mBar.setVisibility(ProgressBar.INVISIBLE);
             mSwipeRefreshLayout.setRefreshing(false);
+            mTextView.setText("加载更多");
             if (null != result) {
                 String dataStr = DBPubService.ascPackDown(
                         getApplicationContext(), result);
@@ -234,6 +255,50 @@ public class MyRecordActivity extends BaseActivity implements SwipeRefreshLayout
         } catch (JSONException e) {
             toast("服务器错误");
             e.printStackTrace();
+        }
+    }
+
+    private class CheangeStateTask extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            mProgressDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            Map<String, String> map = new HashMap<String, String>();
+            map.put("ScanHistoryId", params[0]);
+            map.put("BuyOrgId", params[1]);
+            String param = DBPubService.pubDbParamPack(getApplicationContext(),
+                    1, "Bm.Scan", "ScanHistory_Edit_IsSelect_ByScanHistoryId", map);
+            SoapObject result = DBPubService.getPubDB(getApplicationContext(),
+                    param);
+            String code = null;
+            try {
+                code = result.getProperty(0).toString();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return code;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            mProgressDialog.dismiss();
+            if (null != result) {
+                String dataStr = DBPubService.ascPackDown(
+                        getApplicationContext(), result);
+                if (dataStr != null) {
+                    Intent intent = new Intent(getApplicationContext(), WebViewActivity.class);
+                    intent.putExtra("url", "http://shop.93966.net/H5User/Pdu/UseDetail?id="+mSelectRecord.getScanHistoryId());
+                    startActivity(intent);
+                }
+            } else {
+                toast("连接超时，请检查您的网络");
+            }
         }
     }
 

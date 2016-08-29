@@ -1,14 +1,19 @@
 package com.ninethree.playchannel.activity;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.KeyEvent;
 import android.view.View;
 import android.webkit.CookieManager;
+import android.webkit.GeolocationPermissions;
 import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -42,6 +47,12 @@ public class WebViewActivity extends BaseWebActivity {
 
     private String mReturnUrl;
 
+    //H5上传图片
+    private ValueCallback<Uri> mUploadMessage;
+    public ValueCallback<Uri[]> uploadMessage;
+    public static final int REQUEST_SELECT_FILE = 100;
+    private final static int FILECHOOSER_RESULTCODE = 1;
+
     @Override
     public void setLayout() {
         setContentView(R.layout.ac_web_view);
@@ -56,6 +67,7 @@ public class WebViewActivity extends BaseWebActivity {
         //mRightBtn.setVisibility(View.VISIBLE);
         //mRightBtn.setImageResource(android.R.drawable.ic_menu_share);
         //mRightBtn.setOnClickListener(this);
+        mLeftBtn.setImageResource(R.drawable.icon_close);
         mLeftBtn.setOnClickListener(this);
 
         mWebView = (WebView) findViewById(R.id.web_view);
@@ -95,14 +107,14 @@ public class WebViewActivity extends BaseWebActivity {
                 super.onPageFinished(view, url);
                 // 页面下载完毕,却不代表页面渲染完毕显示出来
                 Log.i("onPageFinished---url:"+url);
-                CookieManager cookieManager = CookieManager.getInstance();
-                String CookieStr = cookieManager.getCookie(url);
-                Log.i("Cookies = " + CookieStr);
-                mReturnUrl = Uri.parse(url).getQueryParameter("ReturnUrl");
-                if (mReturnUrl == null){
-                    mReturnUrl = Uri.parse(url).getQueryParameter("returnUrl");
-                }
-                Log.i("ReturnUrl:" + mReturnUrl);
+//                CookieManager cookieManager = CookieManager.getInstance();
+//                String CookieStr = cookieManager.getCookie(url);
+//                Log.i("Cookies = " + CookieStr);
+//                mReturnUrl = Uri.parse(url).getQueryParameter("ReturnUrl");
+//                if (mReturnUrl == null){
+//                    mReturnUrl = Uri.parse(url).getQueryParameter("returnUrl");
+//                }
+//                Log.i("ReturnUrl:" + mReturnUrl);
             }
 
             @Override
@@ -110,7 +122,7 @@ public class WebViewActivity extends BaseWebActivity {
                 // 自身加载新链接,不做外部跳转
                 //view.loadUrl(url);
 
-                if (url.startsWith("tel:") || url.startsWith("sms:")) {
+                if (url.startsWith("tel:") || url.startsWith("sms:") || url.endsWith(".apk")) {
                     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                     startActivity(intent);
                     return true;
@@ -137,6 +149,52 @@ public class WebViewActivity extends BaseWebActivity {
                 }
                 super.onProgressChanged(view, newProgress);
             }
+
+            @Override
+            public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+                callback.invoke(origin, true, false);
+                super.onGeolocationPermissionsShowPrompt(origin, callback);
+            }
+
+            // For Android 3.0+
+            public void openFileChooser(ValueCallback<Uri> uploadMsg) {
+
+                mUploadMessage = uploadMsg;
+                Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                i.addCategory(Intent.CATEGORY_OPENABLE);
+                i.setType("image/*");
+                startActivityForResult(Intent.createChooser(i, "File Chooser"), FILECHOOSER_RESULTCODE);
+
+            }
+
+            public void openFileChooser(ValueCallback<Uri> uploadMsg, String acceptType) {
+                openFileChooser(uploadMsg);
+            }
+
+            public void openFileChooser(ValueCallback<Uri> uploadMsg, String acceptType, String capture) {
+                openFileChooser(uploadMsg);
+            }
+
+            // For Lollipop 5.0+ Devices
+            @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+            public boolean onShowFileChooser(WebView mWebView, ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams) {
+                if (uploadMessage != null) {
+                    uploadMessage.onReceiveValue(null);
+                    uploadMessage = null;
+                }
+
+                uploadMessage = filePathCallback;
+
+                Intent intent = fileChooserParams.createIntent();
+                try {
+                    startActivityForResult(intent, REQUEST_SELECT_FILE);
+                } catch (ActivityNotFoundException e) {
+                    uploadMessage = null;
+                    return false;
+                }
+                return true;
+            }
+
         });
 
         mWebView.addJavascriptInterface(this, "YLPD");
@@ -164,11 +222,12 @@ public class WebViewActivity extends BaseWebActivity {
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.title_left_btn://返回
-                if (mWebView.canGoBack()) {
-                    mWebView.goBack(); // 后退
-                } else {
-                    finish();//关闭
-                }
+//                if (mWebView.canGoBack()) {
+//                    mWebView.goBack(); // 后退
+//                } else {
+//                    finish();//关闭
+//                }
+                finish();//关闭
                 break;
             default:
                 break;
@@ -207,6 +266,22 @@ public class WebViewActivity extends BaseWebActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (requestCode == REQUEST_SELECT_FILE) {
+                if (uploadMessage == null)
+                    return;
+                uploadMessage.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data));
+                uploadMessage = null;
+            }
+        } else if (requestCode == FILECHOOSER_RESULTCODE) {
+            if (null == mUploadMessage)
+                return;
+            // Use MainActivity.RESULT_OK if you're implementing WebView inside Fragment
+            // Use RESULT_OK only if you're implementing WebView inside an Activity
+            Uri result = data == null || resultCode != RESULT_OK ? null : data.getData();
+            mUploadMessage.onReceiveValue(result);
+            mUploadMessage = null;
+        }
     }
 
     @Override

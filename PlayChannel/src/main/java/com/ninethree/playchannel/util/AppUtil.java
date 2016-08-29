@@ -187,4 +187,10 @@ public class AppUtil {
             CookieSyncManager.getInstance().sync();
         }
     }
+
+    public static void removeCookies(){
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.removeAllCookie();
+        cookieManager.removeSessionCookie();
+    }
 }

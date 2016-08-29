@@ -11,7 +11,7 @@ public class Record implements Serializable {
     private String ScanHistoryGuid;// "966c73f6-f740-472e-a0d6-3faefc0695ea",
     private String ScanHistoryText;// "使用已购产品\r\n产品扫描\r\n商家密码支付",
     private String ScanCode;// "223120124059",
-    private String ScanTypeId;// "",
+    private Integer ScanTypeId;// "",
     private Integer ScanMethodTypeId;// 1000,
     private Integer ScanMethodId;// 23,
     private String ScanMethodGuid;// "05ad2dbf-a509-4324-8bff-f5b2265f5021",
@@ -67,11 +67,11 @@ public class Record implements Serializable {
         ScanCode = scanCode;
     }
 
-    public String getScanTypeId() {
+    public Integer getScanTypeId() {
         return ScanTypeId;
     }
 
-    public void setScanTypeId(String scanTypeId) {
+    public void setScanTypeId(Integer scanTypeId) {
         ScanTypeId = scanTypeId;
     }
 

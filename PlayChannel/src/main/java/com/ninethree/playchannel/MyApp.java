@@ -4,6 +4,7 @@ import android.app.Application;
 
 import com.google.gson.Gson;
 import com.ninethree.playchannel.util.Constants;
+import com.ninethree.playchannel.util.Log;
 import com.tencent.mm.sdk.openapi.IWXAPI;
 import com.tencent.mm.sdk.openapi.SendAuth;
 import com.tencent.mm.sdk.openapi.WXAPIFactory;
@@ -35,7 +36,7 @@ public class MyApp extends Application {
         NoHttp.initialize(this);
 
         Logger.setTag("EWork");
-        Logger.setDebug(true);// 开始NoHttp的调试模式, 这样就能看到请求过程和日志
+        Logger.setDebug(Log.DEBUG);// 开始NoHttp的调试模式, 这样就能看到请求过程和日志
 
         //通过WXAPIFactory,获取IWXAPI的实例
         api = WXAPIFactory.createWXAPI(this, Constants.APP_ID,true);

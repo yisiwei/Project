@@ -15,3 +15,20 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+-keepclassmembers class com.ninethree.playchannel.activity.WebViewActivity {
+   public *;
+}
+
+-keepattributes *Annotation*
+-keepattributes *JavascriptInterface*
+
+# 实体类不混淆
+-keep class com.ninethree.playchannel.bean.** { *; }
+
+# Gson
+-keepattributes Signature
+-keep class sun.misc.Unsafe { *; }
+-keep class com.google.gson.examples.android.model.** { *; }
+
+#微信
+-keep class com.tencent.mm.sdk.** { *; }

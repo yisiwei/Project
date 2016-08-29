@@ -45,32 +45,29 @@ public class MainActivity extends BaseActivity {
     private int preSelImgIndex = 0;
     private AutoScrollViewPager viewPager;// 轮播ViewPager
 
-    private Button mPlayChannelBtn;
-    private Button mNearbyPlayBtn;
-    private Button mMyFootprintBtn;
+    //按钮
+    private Button mScanBtn;//任性刷
+    private Button mMyFootprintBtn;//游玩足迹
+    private Button mNearbyPlayBtn;//附近游乐场
+    private Button mPlayChannelBtn;//游乐频道
 
-    private Button mScanBtn;
-
-    private Button mMyPduBtn;
-    private Button mMyCardBtn;
-    //private Button mMyCollectBtn;
-    private Button mUserCenterBtn;
+    private Button mMyCardBtn;//我的卡券
+    private Button mMyPduBtn;//我的产品
+    private Button mMyRecordBtn;//游玩记录
+    private Button mUserCenterBtn;//用户中心
 
     private Button mPromotionBtn;//优惠促销
-    private Button mActivityBtn;
-
-    private Button mTouristBtn;
-    private Button mKursaalBtn;
-
-    private Button mMyRecordBtn;//游玩记录
-
-    private RequestQueue requestQueue;
+    private Button mActivityBtn;//热门活动
+    private Button mTouristBtn;//最美游客
+    private Button mKursaalBtn;//最美游乐场
 
     private SessionInfo mSessionInfo;
 
+    private String mCookiesValue;
+
     @Override
     public void setLayout() {
-        setContentView(R.layout.ac_main2);
+        setContentView(R.layout.ac_main);
     }
 
     @Override
@@ -78,11 +75,13 @@ public class MainActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
 
         SwipeBackHelper.getCurrentPage(this).setSwipeBackEnable(false);
-        mLeftBtn.setImageResource(R.drawable.icon_clear_cache);
+
+        mLeftBtn.setImageResource(R.drawable.icon_setting);
         mLeftBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                clearCache();
+                //clearCache();
+                startActivity(new Intent(getApplicationContext(),SettingActivity.class));
             }
         });
         mRightBtn.setVisibility(View.VISIBLE);
@@ -116,15 +115,12 @@ public class MainActivity extends BaseActivity {
         viewPager.setCurrentItem(Integer.MAX_VALUE / 2 - Integer.MAX_VALUE / 2
                 % ListUtils.getSize(imgList));
 
-        requestQueue = NoHttp.newRequestQueue();
-
         upgrade();
 
     }
 
     /**
      * ViewPager监听
-     *
      */
     public class MyOnPageChangeListener implements ViewPager.OnPageChangeListener {
 
@@ -173,7 +169,6 @@ public class MainActivity extends BaseActivity {
     }
 
     private void initView() {
-        //mBanner = (Banner) findViewById(R.id.banner);
         // 轮播广告图
         viewPager = (AutoScrollViewPager) findViewById(R.id.view_pager);
 
@@ -185,7 +180,6 @@ public class MainActivity extends BaseActivity {
 
         mMyPduBtn = (Button) findViewById(R.id.my_pdu);
         mMyCardBtn = (Button) findViewById(R.id.my_card);
-        //mMyCollectBtn = (Button) findViewById(R.id.my_collect);
         mUserCenterBtn = (Button) findViewById(R.id.user_center);
 
         mPromotionBtn = (Button) findViewById(R.id.promotion);
@@ -201,17 +195,14 @@ public class MainActivity extends BaseActivity {
         mPlayChannelBtn.setOnClickListener(this);
         mNearbyPlayBtn.setOnClickListener(this);
         mMyFootprintBtn.setOnClickListener(this);
-
         mScanBtn.setOnClickListener(this);
 
         mMyPduBtn.setOnClickListener(this);
         mMyCardBtn.setOnClickListener(this);
-        //mMyCollectBtn.setOnClickListener(this);
         mUserCenterBtn.setOnClickListener(this);
 
         mPromotionBtn.setOnClickListener(this);
         mActivityBtn.setOnClickListener(this);
-
         mTouristBtn.setOnClickListener(this);
         mKursaalBtn.setOnClickListener(this);
 
@@ -231,58 +222,31 @@ public class MainActivity extends BaseActivity {
         });
     }
 
-    private void clearCache(){
-        // 清理Webview缓存数据库
-        deleteDatabase("webview.db");
-        deleteDatabase("webviewCookiesChromium.db");
-        deleteDatabase("webviewCookiesChromiumPrivate.db");
-
-        FileUtils.deleteFile(getCacheDir());
-
-        toast("缓存清理成功");
-    }
-
     @Override
     public void onResume() {
         super.onResume();
         viewPager.startAutoScroll();
-//        Log.i("Main>>>onResume");
-//        if(MyApp.resp != null){
-//            if(MyApp.resp.getType() == ConstantsAPI.COMMAND_SENDAUTH){
-//                Log.i("token:"+MyApp.resp.token);
-//                //getToken(MyApp.resp.token);
-//            }
-//        }
 
         String cookies = AppUtil.getCookies("http://shop.93966.net/h5user/card/mycard");
 
         if (cookies != null){
-            if(mSessionInfo == null){
+            if (mCookiesValue == null || !cookies.equals(mCookiesValue)){
+                mCookiesValue = cookies;
                 String[] arr = cookies.split("=");
                 Log.i("value:"+arr[1]);
                 new SessionTask().execute(arr[1]);
             }
         }else{
+            mCookiesValue = null;
             mSessionInfo = null;
             mTitle.setText(R.string.app_name);
         }
-
     }
 
     @Override
     public void onPause() {
         super.onPause();
         viewPager.stopAutoScroll();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
     }
 
     @Override
@@ -308,9 +272,6 @@ public class MainActivity extends BaseActivity {
             case R.id.my_card:
                 url = "http://shop.93966.net/h5user/card/mycard";
                 break;
-//            case R.id.my_collect:
-//                url = "http://shop.93966.net/h5user/collect/mycollect";
-//                break;
             case R.id.user_center://用户中心
                 url = "http://shop.93966.net/h5user/UserCenter/Info";
                 break;
@@ -326,9 +287,6 @@ public class MainActivity extends BaseActivity {
             case R.id.kursaal:
                 url = "http://ylc.93966.net/Playground/Topic/List?id=8";
                 break;
-//            case R.id.my_record://游玩记录
-//                url = "http://shop.93966.net/h5user/pdu/MyConRec";
-//                break;
         }
         intent.putExtra("url", url);
         startActivity(intent);
@@ -338,7 +296,7 @@ public class MainActivity extends BaseActivity {
     private void upgrade() {
         Request<JSONObject> request = NoHttp.createJsonObjectRequest("http://m.93966.net:1210/AndroidDown/ylpd_upgrade.json");
 
-        requestQueue.add(1000, request, new OnResponseListener<JSONObject>() {
+        MyApp.requestQueue.add(1000, request, new OnResponseListener<JSONObject>() {
             @Override
             public void onStart(int what) {
 
@@ -432,7 +390,7 @@ public class MainActivity extends BaseActivity {
                     SessionInfo.class);
 
             if (mSessionInfo.getReturnCode() == 0){
-                mTitle.setText(mSessionInfo.getReturnObject().getOrg().getOrgName());
+                mTitle.setText(mSessionInfo.getReturnObject().getUserBasic().getNickName());
             }
 
         } catch (JSONException e) {

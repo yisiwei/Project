@@ -16,8 +16,8 @@ import com.ninethree.playchannel.BuildConfig;
  */
 public class Log {
 
-	//private static final boolean DEBUG = BuildConfig.DEBUG;
-	private static final boolean DEBUG = true;
+	public static final boolean DEBUG = BuildConfig.DEBUG;
+//	private static final boolean DEBUG = true;
 
 	private static final String TAG = "EWork";
 
