@@ -5,7 +5,44 @@
     android:background="@color/color_bg"
     android:orientation="vertical">
 
-    <include layout="@layout/title_layout" />
+    <LinearLayout
+        android:id="@+id/title_layout"
+        android:layout_width="match_parent"
+        android:gravity="center_vertical"
+        android:layout_height="wrap_content"
+        android:background="@color/color_main">
+
+        <ImageButton
+            android:id="@+id/title_left_btn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@null"
+            android:contentDescription="@null"
+            android:src="@drawable/icon_setting" />
+
+        <TextView
+            android:id="@+id/title_text"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:padding="10dp"
+            android:singleLine="true"
+            android:text="@string/app_name"
+            android:textColor="@color/color_fff"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/title_right_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="入驻"
+            android:gravity="center"
+            android:padding="10dp"
+            android:textColor="@color/color_fff"
+            android:textSize="16sp"/>
+
+    </LinearLayout>
 
     <ScrollView
         android:layout_width="match_parent"
@@ -269,6 +306,62 @@
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:background="@color/line" />
+
+            <LinearLayout
+                android:visibility="gone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <Button
+                    android:id="@+id/terminal"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@color/color_fff"
+                    android:drawablePadding="5dp"
+                    android:drawableTop="@drawable/icon_5"
+                    android:padding="10dp"
+                    android:text="设备管理"
+                    android:textColor="@color/color_64" />
+
+                <Button
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@color/color_fff"
+                    android:drawablePadding="5dp"
+                    android:drawableTop="@drawable/icon_5"
+                    android:padding="10dp"
+                    android:visibility="invisible"
+                    android:text="销售订单"
+                    android:textColor="@color/color_64" />
+
+                <Button
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@color/color_fff"
+                    android:drawablePadding="5dp"
+                    android:drawableTop="@drawable/icon_13"
+                    android:padding="10dp"
+                    android:visibility="invisible"
+                    android:text="服务记录"
+                    android:textColor="@color/color_64" />
+
+                <Button
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@color/color_fff"
+                    android:drawablePadding="5dp"
+                    android:drawableTop="@drawable/icon_6"
+                    android:padding="10dp"
+                    android:visibility="invisible"
+                    android:text="商家管理"
+                    android:textColor="@color/color_64" />
+
+            </LinearLayout>
+
 
         </LinearLayout>
 

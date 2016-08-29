@@ -12,6 +12,21 @@
 # If your project uses WebView with JS, uncomment the following
 # and specify the fully qualified class name to the JavaScript interface
 # class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+-keepclassmembers class com.ninethree.palychannelbusiness.activity.WebViewActivity {
+   public *;
+}
+
+-keepattributes *Annotation*
+-keepattributes *JavascriptInterface*
+
+
+# 实体类不混淆
+-keep class com.ninethree.palychannelbusiness.bean.** { *; }
+
+# Gson
+-keepattributes Signature
+-keep class sun.misc.Unsafe { *; }
+-keep class com.google.gson.examples.android.model.** { *; }
+
+#微信
+-keep class com.tencent.mm.sdk.** { *; }

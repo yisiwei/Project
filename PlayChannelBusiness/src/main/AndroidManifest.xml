@@ -2,6 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.ninethree.palychannelbusiness">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <application
         android:name=".MyApp"
         android:allowBackup="true"
@@ -24,23 +33,48 @@
 
         <!-- 任性刷 -->
         <activity android:name=".activity.ScanCodeActivity" />
-
-        <!-- 我的卡券 -->
-        <activity android:name=".activity.MyCardActivity" />
-
         <activity
             android:name=".activity.WebViewActivity"
             android:windowSoftInputMode="stateHidden|adjustResize" />
 
         <!-- 主界面 -->
         <activity
-            android:name=".activity.Main2Activity"
+            android:name=".activity.MainActivity"
             android:launchMode="singleTask"
             android:theme="@style/MainTheme" />
-
         <activity android:name=".activity.MyRecordActivity" />
 
+        <!-- 产品列表 -->
+        <activity android:name=".activity.ProductActivity" />
+        <activity android:name=".activity.PduListActivity" />
+
+        <!-- 下载Service -->
         <service android:name=".service.DownLoadService" />
+
+        <!-- 设置 -->
+        <activity android:name=".activity.SettingActivity" />
+
+        <!-- 微信 -->
+        <activity
+            android:name=".wxapi.WXEntryActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@android:style/Theme.Translucent" />
+
+        <!-- 我的客户 -->
+        <activity android:name=".activity.MyCustomerActivity" />
+
+        <!-- 客户详情 -->
+        <activity android:name=".activity.CustomerDetailActivity" />
+
+        <!-- 销售订单 -->
+        <activity android:name=".activity.OrderActivity" />
+
+        <!-- 设备管理 -->
+        <activity android:name=".activity.TerminalActivity" />
+
+        <activity android:name=".activity.TerminaAddActivity" />
+        <activity android:name=".activity.TerminaQueryActivity" />
     </application>
 
 </manifest>

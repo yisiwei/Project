@@ -188,4 +188,10 @@ public class AppUtil {
         }
     }
 
+    public static void removeCookies(){
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.removeAllCookie();
+        cookieManager.removeSessionCookie();
+    }
+
 }

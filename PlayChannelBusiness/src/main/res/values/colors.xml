@@ -10,12 +10,14 @@
     <color name="color_fff">#FFFFFF</color>
     <color name="color_f8">#F8F8F8</color>
     <color name="color_ccc">#cccccc</color>
+    <color name="color_b3">#B3B3B3</color>
 
     <!-- 线条颜色 -->
     <color name="line2">#e5e5e5</color>
     <color name="line">#F0F0F0</color>
 
     <color name="transparent">#00000000</color>
+    <color name="transparent_80">#80000000</color>
 
     <color name="color_32">#323232</color>
 
@@ -28,4 +30,7 @@
 
     <color name="color_fa">#fafafa</color>
     <color name="color_f60">#ff6600</color>
+
+    <color name="color_red">#ee6387</color>
+
 </resources>

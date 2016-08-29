@@ -18,6 +18,9 @@ public class Constants {
 
     public static final String UPGRADE_URL = "http://m.93966.net:1210/AndroidDown/ylpd_upgrade.json";
 
+    public static final String APP_ID = "wxbfb5e910250253b2";
+    public static final String APP_SECRET = "778098323d6e2d60b3ced312c2369ba1";
+
     /**
      * apk下载目录
      */
@@ -47,6 +50,31 @@ public class Constants {
             code += random[index];
         }
         return code;
+    }
+
+    /**
+     * 0	未分配
+     * 1000	下线
+     * 1010	上线
+     * -1000	废弃
+     */
+    public static String getTerminaState(Integer typeId){
+        String state = "";
+        switch (typeId){
+            case 0:
+                state = "未分配";
+                break;
+            case 1000:
+                state = "下线";
+                break;
+            case 1010:
+                state = "上线";
+                break;
+            case -1000:
+                state = "废弃";
+                break;
+        }
+        return state;
     }
 
 }

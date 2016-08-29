@@ -15,7 +15,8 @@ import com.ninethree.palychannelbusiness.BuildConfig;
  */
 public class Log {
 
-	private static final boolean DEBUG = BuildConfig.DEBUG;
+	public static final boolean DEBUG = BuildConfig.DEBUG;
+//	private static final boolean DEBUG = true;
 
 	private static final String TAG = "EWork";
 

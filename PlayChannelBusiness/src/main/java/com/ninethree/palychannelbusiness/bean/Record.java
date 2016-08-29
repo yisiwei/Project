@@ -35,6 +35,11 @@ public class Record implements Serializable {
     private String IsSelect;// 1
     private String StoreName;// 蜂之谷游乐场
 
+    private String NickName;
+    private String UserID;
+    private String Photo;
+    private String Mobile;
+
     public String getScanHistoryId() {
         return ScanHistoryId;
     }
@@ -249,5 +254,37 @@ public class Record implements Serializable {
 
     public void setStoreName(String storeName) {
         StoreName = storeName;
+    }
+
+    public String getNickName() {
+        return NickName;
+    }
+
+    public void setNickName(String nickName) {
+        NickName = nickName;
+    }
+
+    public String getUserID() {
+        return UserID;
+    }
+
+    public void setUserID(String userID) {
+        UserID = userID;
+    }
+
+    public String getPhoto() {
+        return Photo;
+    }
+
+    public void setPhoto(String photo) {
+        Photo = photo;
+    }
+
+    public String getMobile() {
+        return Mobile;
+    }
+
+    public void setMobile(String mobile) {
+        Mobile = mobile;
     }
 }

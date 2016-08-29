@@ -1,15 +1,22 @@
 package com.ninethree.palychannelbusiness.activity;
 
+import android.annotation.TargetApi;
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
 
-import com.jude.swipbackhelper.SwipeBackHelper;
 import com.ninethree.palychannelbusiness.MyApp;
 import com.ninethree.palychannelbusiness.R;
 import com.ninethree.palychannelbusiness.adapter.ImagePagerAdapter;
@@ -17,17 +24,18 @@ import com.ninethree.palychannelbusiness.bean.SessionInfo;
 import com.ninethree.palychannelbusiness.bean.Upgrade;
 import com.ninethree.palychannelbusiness.service.DownLoadService;
 import com.ninethree.palychannelbusiness.util.AppUtil;
-import com.ninethree.palychannelbusiness.util.FileUtils;
+import com.ninethree.palychannelbusiness.util.DensityUtil;
 import com.ninethree.palychannelbusiness.util.ListUtils;
 import com.ninethree.palychannelbusiness.util.Log;
 import com.ninethree.palychannelbusiness.util.PackageUtil;
 import com.ninethree.palychannelbusiness.view.AutoScrollViewPager;
 import com.ninethree.palychannelbusiness.view.MyDialog;
+import com.ninethree.palychannelbusiness.view.MyProgressDialog;
 import com.ninethree.palychannelbusiness.webservice.DBPubService;
+import com.readystatesoftware.systembartint.SystemBarTintManager;
 import com.yolanda.nohttp.NoHttp;
 import com.yolanda.nohttp.rest.OnResponseListener;
 import com.yolanda.nohttp.rest.Request;
-import com.yolanda.nohttp.rest.RequestQueue;
 import com.yolanda.nohttp.rest.Response;
 
 import org.json.JSONException;
@@ -36,7 +44,13 @@ import org.ksoap2.serialization.SoapObject;
 
 import java.util.ArrayList;
 
-public class Main2Activity extends BaseActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+    //标题栏
+    public LinearLayout mTitleLayout;
+    public ImageButton mLeftBtn;
+    public TextView mRightBtn;
+    public TextView mTitle;
 
     //轮播
     private ArrayList<Integer> imgList; // 轮播图片List
@@ -45,54 +59,55 @@ public class Main2Activity extends BaseActivity {
     private int preSelImgIndex = 0;
     private AutoScrollViewPager viewPager;// 轮播ViewPager
 
-    private Button mPlayChannelBtn;
-    private Button mMyPlayBtn;
-    //private Button mJoinChannelBtn;
-
+    //按钮
+    private Button mMyPlayBtn;//我的游乐场
+    private Button mPlayChannelBtn;//游乐频道
     private Button mPlayEquipmentBtn;//游乐设备
-    private Button mEquipmentBtn;
-    private Button mUsedEquipmentBtn;//二手设备
+    private Button mBusinessBtn;//游乐验票 -- 已安装直接打开，否则跳转到下载页
 
-    private Button mInvitationBtn;//轻量招标
+    private Button mEquipmentBtn;//设备大全
+    private Button mInvitationBtn;//设备招标
+    private Button mUsedEquipmentBtn;//二手设备
     private Button mPlaceBtn;   //场地寻租
 
     private Button mMyClientBtn;//我的客户
     private Button mOrderBtn;//销售订单
-
     private Button mRecordBtn;//服务记录
-    //private Button mSaleBtn;//收入提现
-
     private Button mManagerBtn;//商家管理
 
-    private Button mBusinessBtn;//游乐验票
+    private Button mTerminalBtn;//设备管理
 
-    private RequestQueue requestQueue;
-
+    //Session
     private SessionInfo mSessionInfo;
 
-    @Override
-    public void setLayout() {
-        setContentView(R.layout.ac_main2);
-    }
+    //Cookie
+    private String mCookiesValue;
+
+    //loading对话框
+    public MyProgressDialog mProgressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        SwipeBackHelper.getCurrentPage(this).setSwipeBackEnable(false);
-        mLeftBtn.setImageResource(R.drawable.ic_clear_cache);
-        mLeftBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                clearCache();
-            }
-        });
-        mRightBtn.setVisibility(View.VISIBLE);
-        mRightBtn.setImageResource(R.drawable.ic_join);
-        mRightBtn.setOnClickListener(this);
+        //this.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);//禁止截屏
+
+        setContentView(R.layout.ac_main);
 
         initView();
         initEvent();
+
+        //透明状态栏
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            setTranslucentStatus(true);
+            SystemBarTintManager tintManager = new SystemBarTintManager(this);
+            tintManager.setStatusBarTintEnabled(true);
+            // tintManager.setNavigationBarTintEnabled(true);
+            tintManager.setStatusBarTintResource(R.color.transparent);
+
+            mTitleLayout.setPadding(0, DensityUtil.getStatusBarHeight(this), 0,
+                    0);
+        }
 
         // 轮播广告图
         dotsLayout = (LinearLayout) findViewById(R.id.home_navig_dots);
@@ -113,16 +128,29 @@ public class Main2Activity extends BaseActivity {
         viewPager.setCurrentItem(Integer.MAX_VALUE / 2 - Integer.MAX_VALUE / 2
                 % ListUtils.getSize(imgList));
 
+        //初始化loading对话框
+        mProgressDialog = new MyProgressDialog(this);
 
-        requestQueue = NoHttp.newRequestQueue();
-
+        //检查新版本
         upgrade();
 
     }
 
+    @TargetApi(19)
+    private void setTranslucentStatus(boolean on) {
+        Window win = getWindow();
+        WindowManager.LayoutParams winParams = win.getAttributes();
+        final int bits = WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS;
+        if (on) {
+            winParams.flags |= bits;
+        } else {
+            winParams.flags &= ~bits;
+        }
+        win.setAttributes(winParams);
+    }
+
     /**
      * ViewPager监听
-     *
      */
     public class MyOnPageChangeListener implements ViewPager.OnPageChangeListener {
 
@@ -170,10 +198,18 @@ public class Main2Activity extends BaseActivity {
         }
     }
 
+    //初始化控件
     private void initView() {
-        //mBanner = (Banner) findViewById(R.id.banner);
+
+        //标题栏
+        mTitleLayout = (LinearLayout) findViewById(R.id.title_layout);
+        mTitle = (TextView) findViewById(R.id.title_text);
+        mLeftBtn = (ImageButton) findViewById(R.id.title_left_btn);
+        mRightBtn = (TextView) findViewById(R.id.title_right_btn);
+
         viewPager = (AutoScrollViewPager) findViewById(R.id.view_pager);
 
+        //
         mPlayChannelBtn = (Button) findViewById(R.id.play_channel);
         mMyPlayBtn = (Button) findViewById(R.id.my_play);
         mBusinessBtn = (Button) findViewById(R.id.business);
@@ -187,13 +223,30 @@ public class Main2Activity extends BaseActivity {
 
         mMyClientBtn = (Button) findViewById(R.id.my_client);
         mOrderBtn = (Button) findViewById(R.id.order);
-
         mRecordBtn = (Button) findViewById(R.id.record);
-        //mSaleBtn = (Button) findViewById(R.id.sale);
         mManagerBtn = (Button) findViewById(R.id.manager);
+
+        //设备管理
+        mTerminalBtn = (Button) findViewById(R.id.terminal);
+
     }
 
+    //初始化事件
     private void initEvent() {
+
+        //设置
+        mLeftBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getApplicationContext(), SettingActivity.class);
+                intent.putExtra("SessionInfo",mSessionInfo);
+                startActivity(intent);
+            }
+        });
+
+        //入驻
+        mRightBtn.setOnClickListener(this);
+
         mPlayChannelBtn.setOnClickListener(this);
         mMyPlayBtn.setOnClickListener(this);
 
@@ -219,35 +272,41 @@ public class Main2Activity extends BaseActivity {
         mRecordBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (mSessionInfo != null && mSessionInfo.getReturnCode() == 0){
-                    Intent intent = new Intent(getApplicationContext(),MyRecordActivity.class);
-                    intent.putExtra("user",mSessionInfo.getReturnObject().getUserBasic());
+                if (mSessionInfo != null && mSessionInfo.getReturnCode() == 0) {
+                    Intent intent = new Intent(getApplicationContext(), MyRecordActivity.class);
+                    intent.putExtra("user", mSessionInfo.getReturnObject().getUserBasic());
+                    intent.putExtra("org", mSessionInfo.getReturnObject().getOrg());
                     startActivity(intent);
-                }else{
-                    startActivity(new Intent(getApplicationContext(),LoginActivity.class));
+                } else {
+                    startActivity(new Intent(getApplicationContext(), LoginActivity.class));
                 }
             }
         });
-        //mSaleBtn.setOnClickListener(this);
+
         mManagerBtn.setOnClickListener(this);
+
+        //设备管理
+        mTerminalBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (mSessionInfo != null && mSessionInfo.getReturnCode() == 0) {
+                    Intent intent = new Intent(getApplicationContext(), TerminalActivity.class);
+                    intent.putExtra("user", mSessionInfo.getReturnObject().getUserBasic());
+                    intent.putExtra("org", mSessionInfo.getReturnObject().getOrg());
+                    startActivity(intent);
+                } else {
+                    startActivity(new Intent(getApplicationContext(), LoginActivity.class));
+                }
+            }
+        });
     }
 
-    private void clearCache(){
-        // 清理Webview缓存数据库
-        deleteDatabase("webview.db");
-        deleteDatabase("webviewCookiesChromium.db");
-        deleteDatabase("webviewCookiesChromiumPrivate.db");
-
-        FileUtils.deleteFile(getCacheDir());
-
-        toast("缓存清理成功");
-    }
-
-    private void startYouLeYanPiao(){
+    //游乐验票
+    private void startYouLeYanPiao() {
         Intent intent = getPackageManager().getLaunchIntentForPackage("com.ninethree.business");
-        if(intent != null){
+        if (intent != null) {
             startActivity(intent);
-        }else {
+        } else {
             intent = new Intent(this, WebViewActivity.class);
             intent.putExtra("url", "http://a.app.qq.com/o/simple.jsp?pkgname=com.ninethree.business");
             startActivity(intent);
@@ -261,13 +320,16 @@ public class Main2Activity extends BaseActivity {
 
         String cookies = AppUtil.getCookies("http://sj.m.93966.net/");
 
-        if (cookies != null){
-            if(mSessionInfo == null){
+        if (cookies != null) {
+            if (mCookiesValue == null || !cookies.equals(mCookiesValue)) {
+                mCookiesValue = cookies;
                 String[] arr = cookies.split("=");
-                Log.i("value:"+arr[1]);
+                Log.i("value:" + arr[1]);
+
                 new SessionTask().execute(arr[1]);
             }
-        }else{
+        } else {
+            mCookiesValue = null;
             mSessionInfo = null;
             mTitle.setText(R.string.app_name);
         }
@@ -281,58 +343,94 @@ public class Main2Activity extends BaseActivity {
 
     @Override
     public void onClick(View v) {
+        if (AppUtil.isFastClick()){
+            return;
+        }
         Intent intent = new Intent(this, WebViewActivity.class);
         String url = null;
         switch (v.getId()) {
             case R.id.title_right_btn://入驻
                 url = "http://ylc.93966.net/Org/Join/2";
+                intent.putExtra("url", url);
+                startActivity(intent);
                 break;
             case R.id.play_channel:
                 url = "http://ylc.93966.net";
+                intent.putExtra("url", url);
+                startActivity(intent);
                 break;
-            case R.id.my_play:  //我的游乐场
-                url = "http://sj.m.93966.net/Home/MyStore";
+            case R.id.my_play:  //我的游乐场 http://sj.m.93966.net/Home/MyStore
+                url = "http://sj.m.93966.net/Home/ylclist";
+                intent.putExtra("url", url);
+                startActivity(intent);
                 break;
             case R.id.play_equipment:   //游乐设备频道
                 url = "http://ylb.93966.net";
+                intent.putExtra("url", url);
+                startActivity(intent);
                 break;
             case R.id.equipment:    //设备大全
                 url = "http://ylb.93966.net/PlayEquipment/Product/Category";
+                intent.putExtra("url", url);
+                startActivity(intent);
                 break;
             case R.id.used_equipment: //二手设备
                 url = "http://ylb.93966.net/PlayEquipment/Ask/List/1";
+                intent.putExtra("url", url);
+                startActivity(intent);
                 break;
-            case R.id.invitation:   //轻量招标
+            case R.id.invitation:   //设备招标
                 url = "http://ylb.93966.net/PlayEquipment/Ask/List/3";
+                intent.putExtra("url", url);
+                startActivity(intent);
                 break;
             case R.id.place:    //场地寻租
                 url = "http://ylb.93966.net/PlayEquipment/Ask/List/5";
+                intent.putExtra("url", url);
+                startActivity(intent);
                 break;
             case R.id.my_client:    //我的客户
-                url = "http://sj.m.93966.net/ClientManager";
+//                url = "http://sj.m.93966.net/ClientManager";
+//                intent.putExtra("url", url);
+//                startActivityForResult(intent,100);
+
+                if (mSessionInfo != null && mSessionInfo.getReturnCode() == 0) {
+                    intent = new Intent(this,MyCustomerActivity.class);
+                    intent.putExtra("orgId",mSessionInfo.getReturnObject().getOrg().getOrgId());
+                    startActivity(intent);
+                }else {
+                    startActivity(new Intent(getApplicationContext(), LoginActivity.class));
+                }
+
                 break;
             case R.id.order:    //销售订单
-                url = "http://sj.m.93966.net/OrderManager/SaleOrder";
+//                url = "http://sj.m.93966.net/OrderManager/SaleOrder";
+//                intent.putExtra("url", url);
+//                startActivityForResult(intent,100);
+
+                if (mSessionInfo != null && mSessionInfo.getReturnCode() == 0) {
+                    intent = new Intent(this,OrderActivity.class);
+                    intent.putExtra("orgId",mSessionInfo.getReturnObject().getOrg().getOrgId());
+                    startActivity(intent);
+                }else {
+                    startActivity(new Intent(getApplicationContext(), LoginActivity.class));
+                }
+
                 break;
-//            case R.id.record:   //服务记录
-//                url = "http://sj.m.93966.net/OrderManager/UseRecord";
-//                break;
-//            case R.id.sale: //收入提现
-//                url = "http://sj.m.93966.net/CardSale";
-//                break;
             case R.id.manager:  //商家管理
                 url = "http://sj.m.93966.net/";
+                intent.putExtra("url", url);
+                startActivityForResult(intent,100);
                 break;
         }
-        intent.putExtra("url", url);
-        startActivity(intent);
+
     }
 
-
+    //检查新版本
     private void upgrade() {
         Request<JSONObject> request = NoHttp.createJsonObjectRequest("http://m.93966.net:1210/AndroidDown/ylqyj_upgrade.json");
 
-        requestQueue.add(1000, request, new OnResponseListener<JSONObject>() {
+        MyApp.requestQueue.add(1000, request, new OnResponseListener<JSONObject>() {
             @Override
             public void onStart(int what) {
                 mProgressDialog.show();
@@ -353,8 +451,8 @@ public class Main2Activity extends BaseActivity {
             }
 
             @Override
-            public void onFailed(int what, String url, Object tag, Exception exception, int responseCode, long networkMillis) {
-                Log.i("onFailed:" + exception.getMessage());
+            public void onFailed(int what, Response<JSONObject> response) {
+                Log.i("onFailed:" + response.getException().getMessage());
             }
 
             @Override
@@ -365,6 +463,7 @@ public class Main2Activity extends BaseActivity {
 
     }
 
+    //显示有新版本提示对话框
     private void showUpgradeDialog(final String url) {
         MyDialog.show(this, "检测到新版本", "立即更新", new MyDialog.OnConfirmListener() {
 
@@ -375,6 +474,7 @@ public class Main2Activity extends BaseActivity {
         });
     }
 
+    //下载新版本
     private void downLoad(String url) {
         Log.i("下载Url:" + url);
         Intent intent = new Intent(this, DownLoadService.class);
@@ -382,6 +482,7 @@ public class Main2Activity extends BaseActivity {
         startService(intent);
     }
 
+    //获取会话信息
     private class SessionTask extends AsyncTask<String, Void, String> {
 
         @Override
@@ -408,7 +509,7 @@ public class Main2Activity extends BaseActivity {
             super.onPostExecute(result);
             mProgressDialog.dismiss();
 
-            Log.i("result:"+result);
+            Log.i("result:" + result);
 
             if (null != result) {
                 success(result);
@@ -425,7 +526,7 @@ public class Main2Activity extends BaseActivity {
             mSessionInfo = MyApp.getGson().fromJson(jsonObject.toString(),
                     SessionInfo.class);
 
-            if (mSessionInfo.getReturnCode() == 0){
+            if (mSessionInfo.getReturnCode() == 0) {
                 mTitle.setText(mSessionInfo.getReturnObject().getOrg().getOrgName());
             }
 
@@ -435,4 +536,23 @@ public class Main2Activity extends BaseActivity {
         }
     }
 
+    //toast提示
+    public void toast(String text) {
+        Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT)
+                .show();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 100){
+            Log.i("onActivityResult>>>");
+            String cookies = AppUtil.getCookies("http://sj.m.93966.net/");
+            if (cookies != null) {
+                String[] arr = cookies.split("=");
+                Log.i("value:" + arr[1]);
+                new SessionTask().execute(arr[1]);
+            }
+        }
+    }
 }
